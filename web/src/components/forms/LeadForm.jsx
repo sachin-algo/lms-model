@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
-import { Input } from '../ui/input';
+import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '../ui/form';
 import { Combobox } from '../ui/combobox';

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
-import { Input } from '../ui/input';
+import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
