@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -67,9 +67,8 @@ model RolePermission {
 // EXISTING TABLES (Preserved & Enhanced)
 // ==========================================
 
-/// This model contains row level security.
 model Account {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String    @id @default(uuid())
   name           String    @unique
   address        String?
   industry       String?
@@ -82,7 +81,7 @@ model Account {
   openLeads      Int?      @default(0) @map("open_leads")
   ltv            String?
   ownerInitials  String?    @map("owner_initials")
-  createdAt      DateTime? @default(now()) @db.Timestamptz(6) @map("created_at")
+  createdAt      DateTime? @default(now()) @map("created_at")
 
   // CRM Profile Fields (merged from crm-app)
   website        String?
@@ -106,14 +105,13 @@ model Account {
   @@map("accounts")
 }
 
-/// This model contains row level security.
 model Contact {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String    @id @default(uuid())
   fullName       String    @map("full_name")
   title          String?
   email          String?   @unique
   phone          String?
-  accountId      String?   @map("account_id") @db.Uuid
+  accountId      String?   @map("account_id")
   account        Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
   role           String?
   location       String?
@@ -122,7 +120,7 @@ model Contact {
   since          String?
   notes          String?
   ownerInitials  String?    @map("owner_initials")
-  createdAt      DateTime? @default(now()) @db.Timestamptz(6) @map("created_at")
+  createdAt      DateTime? @default(now()) @map("created_at")
 
   // Relations
   leads          Lead[]
@@ -131,13 +129,12 @@ model Contact {
   @@map("contacts")
 }
 
-/// This model contains row level security.
 model Lead {
-  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String    @id @default(uuid())
   title           String    @unique
-  accountId       String?   @map("account_id") @db.Uuid
+  accountId       String?   @map("account_id")
   account         Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
-  contactId       String?   @map("contact_id") @db.Uuid
+  contactId       String?   @map("contact_id")
   contact         Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
   firstName       String?   @map("first_name")
   lastName        String?   @map("last_name")
@@ -151,7 +148,7 @@ model Lead {
   deliveryFormat  String?   @map("delivery_format")
   value           String?
   probability     Int?      @default(0)
-  dueDate         DateTime? @db.Date @map("due_date")
+  dueDate         DateTime? @map("due_date")
   ownerInitials   String?    @map("owner_initials")
   isFeatured      Boolean?  @default(false) @map("is_featured")
   description     String?
@@ -177,11 +174,11 @@ model Lead {
   isConverted     Boolean   @default(false) @map("is_converted")
   convertedDate   DateTime? @map("converted_date")
   convertedById   String?   @map("converted_by_id")
-  convertedAccountId  String?  @map("converted_account_id") @db.Uuid
-  convertedContactId  String?  @map("converted_contact_id") @db.Uuid
-  convertedDealId     String?  @map("converted_deal_id") @db.Uuid
+  convertedAccountId  String?  @map("converted_account_id")
+  convertedContactId  String?  @map("converted_contact_id")
+  convertedDealId     String?  @map("converted_deal_id")
   
-  createdAt       DateTime? @default(now()) @db.Timestamptz(6) @map("created_at")
+  createdAt       DateTime? @default(now()) @map("created_at")
 
   // For relations
   activities       LeadActivity[]
@@ -196,7 +193,7 @@ model Lead {
 
 model LeadAttachment {
   id           String   @id @default(cuid())
-  leadId       String   @map("lead_id") @db.Uuid // Must match leads.id type
+  leadId       String   @map("lead_id")
   fileName     String   @map("file_name")
   fileSize     Int      @map("file_size")
   mimeType     String   @map("mime_type")
@@ -209,9 +206,9 @@ model LeadAttachment {
 
 model LeadActivity {
   id        String   @id @default(cuid())
-  leadId    String   @map("lead_id") @db.Uuid // Match leads.id
+  leadId    String   @map("lead_id")
   lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  userId    String?  @map("user_id") // Optional for now
+  userId    String?  @map("user_id")
   user      User?    @relation(fields: [userId], references: [id])
   type      String   // CREATED, STAGE_CHANGED, ASSIGNED, ATTACHMENT_ADDED, EDITED
   fromValue String?  @map("from_value")
@@ -235,14 +232,14 @@ model SystemActivity {
 }
 
 model Deal {
-  id                  String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                  String           @id @default(uuid())
   title               String           @unique
-  accountId           String?          @map("account_id") @db.Uuid
+  accountId           String?          @map("account_id")
   account             Account?         @relation(fields: [accountId], references: [id])
-  sourceLeadId        String?          @unique @map("source_lead_id") @db.Uuid
+  sourceLeadId        String?          @unique @map("source_lead_id")
   sourceLead          Lead?            @relation(name: "LeadToDeal", fields: [sourceLeadId], references: [id])
   stage               String           // DISCOVERY, PROPOSAL, NEGOTIATION, CONTRACT, CLOSED_WON, CLOSED_LOST, ON_HOLD
-  value               Decimal?         @db.Decimal(15, 2)
+  value               Decimal?
   probability         Int              @default(0)
   ownerId             String?          @map("owner_id")
   owner               User?            @relation(fields: [ownerId], references: [id])
@@ -250,8 +247,8 @@ model Deal {
   description         String?
   nextStep            String?          @map("next_step")
   leadSource          String?          @map("lead_source")
-  mrr                 Decimal?         @db.Decimal(15, 2)
-  arr                 Decimal?         @db.Decimal(15, 2)
+  mrr                 Decimal?
+  arr                 Decimal?
   createdAt           DateTime         @default(now()) @map("created_at")
   updatedAt           DateTime         @updatedAt @map("updated_at")
 
@@ -265,7 +262,7 @@ model Deal {
 
 model DealActivity {
   id        String   @id @default(cuid())
-  dealId    String   @map("deal_id") @db.Uuid
+  dealId    String   @map("deal_id")
   deal      Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
   userId    String?  @map("user_id")
   user      User?    @relation(fields: [userId], references: [id])
@@ -278,7 +275,7 @@ model DealActivity {
 
 model DealDocument {
   id           String   @id @default(cuid())
-  dealId       String   @map("deal_id") @db.Uuid
+  dealId       String   @map("deal_id")
   deal         Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
   title        String
   fileName     String   @map("file_name")
@@ -293,7 +290,7 @@ model DealDocument {
 
 model DealCompetitor {
   id        String  @id @default(cuid())
-  dealId    String  @map("deal_id") @db.Uuid
+  dealId    String  @map("deal_id")
   deal      Deal    @relation(fields: [dealId], references: [id], onDelete: Cascade)
   name      String
   strength  String?
@@ -305,9 +302,9 @@ model DealCompetitor {
 
 model DealStakeholder {
   id        String   @id @default(cuid())
-  dealId    String   @map("deal_id") @db.Uuid
+  dealId    String   @map("deal_id")
   deal      Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  contactId String   @map("contact_id") @db.Uuid
+  contactId String   @map("contact_id")
   contact   Contact  @relation(fields: [contactId], references: [id])
   role      String?  // CHAMPION, DECISION_MAKER, INFLUENCER, BLOCKER
   notes     String?
